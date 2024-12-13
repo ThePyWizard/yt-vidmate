@@ -2,10 +2,22 @@ import streamlit as st
 import yt_dlp
 import tempfile
 import os
+from streamlit_lottie import st_lottie
+import json
+import time
+
+# Function to load Lottie animation
+def load_lottiefile(filepath: str):
+    with open(filepath, "r") as f:
+        return json.load(f)
+
 
 def main():
-    st.set_page_config(page_title="VidMate - YouTube Downloader", page_icon="🎥", layout="centered")
-    st.title("🎥 VidMate - Download Videos Effortlessly")
+    st.set_page_config(page_title="VidMate", page_icon="🎥", layout="centered")
+    # Load and display Lottie animation
+    lottie_animation = load_lottiefile("header-animation.json")  # Add your Lottie file path
+    st_lottie(lottie_animation, height=150)
+    st.title("VidMate")
 
     # App description
     st.markdown(
@@ -17,7 +29,6 @@ def main():
             text-align: center;
         }
         </style>
-        <p class="description">Enter a YouTube video URL below to fetch details and download it in your preferred format.</p>
         """,
         unsafe_allow_html=True,
     )
@@ -79,7 +90,8 @@ def main():
                     with st.spinner("Downloading your video, please wait..."):
                         # Use a temporary directory for download
                         with tempfile.TemporaryDirectory() as temp_dir:
-                            output_path = f"{temp_dir}/{st.session_state.title}.%(ext)s"
+                            # Set a fixed file name "vidmate-video"
+                            output_path = f"{temp_dir}/vidmate-video.%(ext)s"
 
                             ydl_opts = {
                                 'format': format_id,
@@ -92,7 +104,7 @@ def main():
                             # Find the downloaded file in the temporary directory
                             downloaded_file_path = None
                             for file in os.listdir(temp_dir):
-                                if file.startswith(st.session_state.title):
+                                if file.startswith("vidmate-video"):
                                     downloaded_file_path = os.path.join(temp_dir, file)
                                     break
 
@@ -103,7 +115,7 @@ def main():
                                     st.download_button(
                                         label="Click here to download the video 🎥",
                                         data=file,
-                                        file_name=os.path.basename(downloaded_file_path),
+                                        file_name="vidmate-video.mp4",
                                         mime="video/mp4",
                                     )
                             else:

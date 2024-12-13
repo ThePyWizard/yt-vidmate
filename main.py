@@ -3,9 +3,8 @@ import yt_dlp
 import os
 
 def main():
-    # Set up the app title and layout
-    st.set_page_config(page_title="StreamEase - YouTube Downloader", page_icon="🎥", layout="centered")
-    st.title("🎥 StreamEase - Download Videos Effortlessly")
+    st.set_page_config(page_title="VidMate - YouTube Downloader", page_icon="🎥", layout="centered")
+    st.title("🎥 VidMate - Download Videos Effortlessly")
 
     # App description
     st.markdown(
@@ -23,52 +22,61 @@ def main():
     )
 
     # Input for YouTube URL
-    video_url = st.text_input(
-        "Paste YouTube Video URL here:", placeholder="https://www.youtube.com/watch?v=example"
-    )
+    video_url = st.text_input("Paste YouTube Video URL here:", placeholder="https://www.youtube.com/watch?v=example")
 
-    if video_url:
-        try:
-            # Fetch video information
-            with yt_dlp.YoutubeDL() as ydl:
-                info_dict = ydl.extract_info(video_url, download=False)
+    # Button to trigger video details fetching
+    if st.button("Fetch Video Details"):
+        if video_url:
+            try:
+                # Fetch video information
+                with yt_dlp.YoutubeDL() as ydl:
+                    info_dict = ydl.extract_info(video_url, download=False)
 
-            # Display video details
-            st.write("### Video Details")
-            st.markdown(
-                f"""<style>.details {{ font-size: 16px; }}</style>
-                <div class="details">
-                **Title:** {info_dict['title']}<br>
-                **Views:** {info_dict['view_count']}<br>
-                **Length:** {info_dict['duration']} seconds<br>
-                **Description:** {info_dict['description'][:200]}...
-                </div>""",
-                unsafe_allow_html=True,
-            )
+                # Display video details
+                st.write("### Video Details")
+                st.markdown(
+                    f"""
+                    **Title:** {info_dict['title']}  
+                    **Views:** {info_dict['view_count']}  
+                    **Length:** {info_dict['duration']} seconds  
+                    **Description:** {info_dict['description'][:200]}...
+                    """, 
+                    unsafe_allow_html=True
+                )
 
-            # Available formats
-            formats = info_dict['formats']
-            format_options = [
-                (f"{fmt['format_note']} - {fmt['ext']}", fmt['format_id'])
-                for fmt in formats if fmt.get('format_note')
-            ]
+                # Available formats
+                formats = info_dict['formats']
+                format_options = [
+                    (f"{fmt['format_note']} - {fmt['ext']}", fmt['format_id'])
+                    for fmt in formats if fmt.get('format_note')
+                ]
 
-            selected_format = st.selectbox("Select Format:", [opt[0] for opt in format_options])
-            format_id = dict(format_options)[selected_format]
+                selected_format = st.selectbox("Select Format:", [opt[0] for opt in format_options])
+                format_id = dict(format_options)[selected_format]
 
-            if st.button("Download Video 🎬"):
-                with st.spinner("Downloading your video, please wait..."):
-                    ydl_opts = {
-                        'format': format_id,
-                        'outtmpl': os.path.join(os.getcwd(), f"{info_dict['title']}.%(ext)s"),
-                    }
-                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                        ydl.download([video_url])
-                    st.success("Download complete! ✅")
-                    st.markdown(f"File saved as: **{info_dict['title']}** in the current directory.")
+                if st.button("Download Video 🎬"):
+                    with st.spinner("Downloading your video, please wait..."):
+                        download_dir = os.path.join(os.getcwd(), "downloads")
+                        os.makedirs(download_dir, exist_ok=True)  # Ensure the directory exists
+                        
+                        ydl_opts = {
+                            'format': format_id,
+                            'outtmpl': os.path.join(download_dir, f"{info_dict['title']}.%(ext)s"),
+                        }
+                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                            ydl.download([video_url])
 
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+                        # Provide a download link
+                        downloaded_file_path = os.path.join(download_dir, f"{info_dict['title']}.{info_dict['formats'][0]['ext']}")
+                        
+                        if os.path.exists(downloaded_file_path):
+                            st.success("Download complete! ✅")
+                            st.markdown(f"Click [here](/{downloaded_file_path}) to download the video.")
+                        else:
+                            st.error("There was an error while saving the video.")
+
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
